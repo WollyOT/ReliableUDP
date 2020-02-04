@@ -16,7 +16,6 @@
 #define PLATFORM_UNIX     3
 #define PACKET_SIZE 1000
 
-
 #if defined(_WIN32)
 #define PLATFORM PLATFORM_WINDOWS
 #elif defined(__APPLE__)
@@ -155,7 +154,7 @@ namespace net
 	{
 #if PLATFORM == PLATFORM_WINDOWS
 		WSADATA WsaData;
-		return WSAStartup(MAKEWORD(2, 2), &WsaData) == NO_ERROR;
+		return WSAStartup(MAKEWORD(2, 2), &WsaData) == NO_ERROR; //replaced '!=' with '=='
 #else
 		return true;
 #endif
@@ -204,7 +203,7 @@ namespace net
 			address.sin_addr.s_addr = INADDR_ANY;
 			address.sin_port = htons((unsigned short)port);
 
-			if (bind(socket, (const sockaddr*)&address, sizeof(sockaddr_in)) < 0)
+			if (bind(socket, (const sockaddr*)&address, sizeof(sockaddr_in)) < 0) // this will be corrected after the others are fixed
 			{
 				printf("failed to bind socket\n");
 				Close();
@@ -445,7 +444,7 @@ namespace net
 			assert(running);
 			if (address.GetAddress() == 0)
 				return false;
-			unsigned char packet[PACKET_SIZE + 4];	//replaced size with PACKET_SIZE
+			unsigned char packet[PACKET_SIZE + 4];	//replaced 'size' with 'PACKET_SIZE'
 			packet[0] = (unsigned char)(protocolId >> 24);
 			packet[1] = (unsigned char)((protocolId >> 16) & 0xFF);
 			packet[2] = (unsigned char)((protocolId >> 8) & 0xFF);
@@ -457,9 +456,9 @@ namespace net
 		virtual int ReceivePacket(unsigned char data[], int size)
 		{
 			assert(running);
-			unsigned char packet[PACKET_SIZE + 4];									//replaced size with PACKET_SIZE
+			unsigned char packet[PACKET_SIZE + 4];	//replaced 'size' with 'PACKET_SIZE'
 			Address sender;
-			int bytes_read = socket.Receive(sender, packet, PACKET_SIZE + 4);		//replaced size with PACKET_SIZE
+			int bytes_read = socket.Receive(sender, packet, size + 4);
 			if (bytes_read == 0)
 				return 0;
 			if (bytes_read <= 4)
@@ -971,7 +970,7 @@ namespace net
 			}
 #endif
 			const int header = 12;
-			unsigned char packet[header + PACKET_SIZE];	//replaced packet with PACKET_SIZE
+			unsigned char packet[header + PACKET_SIZE];	//replaced 'size' with 'PACKET_SIZE'
 			unsigned int seq = reliabilitySystem.GetLocalSequence();
 			unsigned int ack = reliabilitySystem.GetRemoteSequence();
 			unsigned int ack_bits = reliabilitySystem.GenerateAckBits();
@@ -983,15 +982,13 @@ namespace net
 			return true;
 		}
 
-		int ReceivePacket(unsigned char data[], int size)
+		int ReceivePacket(unsigned char data[], int size) 		// data will contain the value of memset
 		{
-			//printf("%c\n", data[0]);
-
 			const int header = 12;
-			if (PACKET_SIZE <= header)														//replaced size with PACKET_SIZE
+			if (size <= header)
 				return false;
-			unsigned char packet[header + PACKET_SIZE];										//replaced size with PACKET_SIZE
-			int received_bytes = Connection::ReceivePacket(packet, PACKET_SIZE + header);	//replaced size with PACKET_SIZE
+			unsigned char packet[header + PACKET_SIZE];	//replaced 'size' with 'PACKET_SIZE'
+			int received_bytes = Connection::ReceivePacket(packet, size + header);
 			if (received_bytes == 0)
 				return false;
 			if (received_bytes <= header)

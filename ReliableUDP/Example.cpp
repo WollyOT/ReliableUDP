@@ -9,20 +9,33 @@
 #include <string>
 #include <vector>
 
+#include <direct.h>
+#include <errno.h>
+
 #include "Net.h"
+
+#pragma warning(disable : 4996)
 
 //#define SHOW_ACKS
 
 using namespace std;
 using namespace net;
 
-const int ServerPort = 30000;
-const int ClientPort = 30001;
+const int ServerPort = 30001;
+const int ClientPort = 30000;
 const int ProtocolId = 0x11223344;
 const float DeltaTime = 1.0f / 30.0f;
 const float SendRate = 1.0f / 30.0f;
 const float TimeOut = 10.0f;
 const int PacketSize = 256;
+
+///////
+struct SendingMessage
+{
+	unsigned char* fileName;
+	unsigned char* message;
+};
+///////
 
 class FlowControl
 {
@@ -120,6 +133,8 @@ int main(int argc, char* argv[])
 {
 	// parse command line
 
+	// char fileName[100] = "BeeMovie.txt";
+	 
 	enum Mode
 	{
 		Client,
@@ -128,16 +143,25 @@ int main(int argc, char* argv[])
 
 	Mode mode = Server;
 	Address address;
+	
+	FILE* inputFile = NULL;
 
 	if (argc >= 3)
 	{
 		int a, b, c, d;
-		if (sscanf_s(argv[1], "%d.%d.%d.%d", &a, &b, &c, &d))
+		if (sscanf_s(argv[1], "%d.%d.%d.%d", &a, &b, &c, &d))	//changed 'sscanf' to 'sscanf_s'
 		{
 			mode = Client;
 			address = Address(a, b, c, d, ServerPort);
 		}
 
+		inputFile = fopen(argv[2], "rb");
+		if (inputFile == NULL)	// file failed to open
+		{
+			perror("Error");
+			return -1;
+		}
+		// strcpy(fileName, "BeeMovie.txt");						// assigns file name to a char pointer
 
 	}
 
@@ -206,19 +230,22 @@ int main(int argc, char* argv[])
 
 		while (sendAccumulator > 1.0f / sendRate)
 		{
-			//unsigned char packet[PacketSize];
-			unsigned char packet[PacketSize] = "Hello World";			
-			//memset(packet, 0, sizeof(packet));
+			unsigned char packet[PacketSize] = "Hello World";	//hard-coded Hello World into packet
+			//memset(packet, 0, sizeof(packet));				//commented out memset to replace with our own
+
 			connection.SendPacket(packet, sizeof(packet));
 			sendAccumulator -= 1.0f / sendRate;
 		}
 
 		while (true)
 		{
-			unsigned char packet[256];
-			int bytes_read = connection.ReceivePacket(packet, sizeof(packet));
+			unsigned char newPacket[256];	
+			int bytes_read = connection.ReceivePacket(newPacket, sizeof(newPacket));
+
 			if (bytes_read == 0)
 				break;
+			printf("%s", newPacket);
+
 		}
 
 		// show packets that were acked this frame
