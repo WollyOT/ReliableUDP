@@ -1,4 +1,1 @@
-﻿  Example.cpp
-C:\Users\smith\source\repos\ReliableUDP\ReliableUDP\Net.h(910,1): warning C4244: '/=': conversion from 'float' to 'int', possible loss of data
-C:\Users\smith\source\repos\ReliableUDP\ReliableUDP\Net.h(911,1): warning C4244: '/=': conversion from 'float' to 'int', possible loss of data
-  ReliableUDP.vcxproj -> C:\Users\smith\source\repos\ReliableUDP\Debug\ReliableUDP.exe
+﻿  ReliableUDP.vcxproj -> C:\Users\smith\source\repos\ReliableUDP\Debug\ReliableUDP.exe

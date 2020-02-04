@@ -10,7 +10,7 @@
 #include <vector>
 
 #include <direct.h>
-#include <errno.h>
+#include <math.h>
 
 #include "Net.h"
 
@@ -30,11 +30,7 @@ const float TimeOut = 10.0f;
 const int PacketSize = 256;
 
 ///////
-struct SendingMessage
-{
-	unsigned char* fileName;
-	unsigned char* message;
-};
+
 ///////
 
 class FlowControl
@@ -145,7 +141,16 @@ int main(int argc, char* argv[])
 	Address address;
 	
 	FILE* inputFile = NULL;
+	long fileLength = 0;
+	char* buffer = NULL;
+	char fileName[100] = { 0 };
+	int packetAmount = 0;
+	float packetAmountBuffer = 0;
+	int idVal = 0;
 
+
+
+	//argc = 3;
 	if (argc >= 3)
 	{
 		int a, b, c, d;
@@ -155,13 +160,24 @@ int main(int argc, char* argv[])
 			address = Address(a, b, c, d, ServerPort);
 		}
 
-		inputFile = fopen(argv[2], "rb");
+		inputFile = fopen("BeeMovie.txt", "rb");
 		if (inputFile == NULL)	// file failed to open
 		{
 			perror("Error");
 			return -1;
 		}
-		// strcpy(fileName, "BeeMovie.txt");						// assigns file name to a char pointer
+		fseek(inputFile, 0, SEEK_END);
+		fileLength = ftell(inputFile);
+		rewind(inputFile);
+
+		buffer = (char*)malloc(fileLength * sizeof(char));
+		fread(buffer, fileLength, 1, inputFile);
+		fclose(inputFile);
+
+		packetAmountBuffer = fileLength / PacketSize;
+		packetAmount = ceilf(packetAmountBuffer);
+
+		strcpy(fileName, "BeeMovie.txt");						// assigns file name to a char pointer
 
 	}
 
@@ -230,8 +246,15 @@ int main(int argc, char* argv[])
 
 		while (sendAccumulator > 1.0f / sendRate)
 		{
-			unsigned char packet[PacketSize] = "Hello World";	//hard-coded Hello World into packet
-			//memset(packet, 0, sizeof(packet));				//commented out memset to replace with our own
+			unsigned char packet[PacketSize];	//hard-coded Hello World into packet
+			if (idVal == 0)
+			{
+				buildPacket(packet, 0, sizeof(fileName));
+			}
+			
+			
+
+			memcpy(packet + 4, fileName, sizeof(fileName));
 
 			connection.SendPacket(packet, sizeof(packet));
 			sendAccumulator -= 1.0f / sendRate;
@@ -239,13 +262,12 @@ int main(int argc, char* argv[])
 
 		while (true)
 		{
-			unsigned char newPacket[256];	
+			unsigned char newPacket[PacketSize];	
 			int bytes_read = connection.ReceivePacket(newPacket, sizeof(newPacket));
 
 			if (bytes_read == 0)
 				break;
-			printf("%s", newPacket);
-
+			std::cout << newPacket;
 		}
 
 		// show packets that were acked this frame
@@ -297,3 +319,14 @@ int main(int argc, char* argv[])
 
 	return 0;
 }
+
+char* buildPacket(unsigned char pToBuild[], int id, int size)
+{
+	pToBuild[0] = id;
+	pToBuild[1] = '*';
+	pToBuild[2] = sizeof(size);
+	pToBuild[3] = '*';
+
+	return 0;
+}
+
